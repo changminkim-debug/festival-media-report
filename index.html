@@ -186,7 +186,7 @@ tbody tr:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 10. 오후 4:38:01</div>
+        <div class="hd-gen">생성: 2026. 7. 10. 오후 4:45:55</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -352,7 +352,7 @@ function currentView() {
 }
 
 let MEDIA_FILTER = 'all';
-let CUR_PERIOD = 'last7';
+let CUR_PERIOD = 'thisWeek';
 
 function fmtKpiW(n) {
   n = Math.round(n);
@@ -373,9 +373,6 @@ function fmtCPV(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
 const PERIODS = [
   { key: 'yesterday', label: '어제' },
   { key: 'thisWeek', label: '이번주' },
-  { key: 'last7', label: '최근 7일' },
-  { key: 'last30', label: '최근 30일' },
-  { key: 'thisMonth', label: '이번달' },
   { key: 'all', label: '전체 기간' },
 ];
 
@@ -389,9 +386,6 @@ function getRange(dates, period) {
     const s = new Date(d); s.setDate(s.getDate() - daysSinceMonday);
     return [iso(s), maxDate];
   }
-  if (period === 'last7') { const s=new Date(d); s.setDate(s.getDate()-6); return [iso(s), maxDate]; }
-  if (period === 'last30') { const s=new Date(d); s.setDate(s.getDate()-29); return [iso(s), maxDate]; }
-  if (period === 'thisMonth') { const s=new Date(d.getFullYear(), d.getMonth(), 1); return [iso(s), maxDate]; }
   return [dates[0], maxDate];
 }
 function parseISO(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
