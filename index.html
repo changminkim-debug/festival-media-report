@@ -81,6 +81,7 @@ body{
   font-family:-apple-system,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
   background:var(--bg); color:var(--text); font-size:14.5px; line-height:1.5;
   -webkit-font-smoothing:antialiased;
+  zoom:1.25;
 }
 .num{font-variant-numeric:tabular-nums}
 
@@ -106,10 +107,13 @@ body{
 .sb-bottom{padding:14px 18px;border-top:1px solid var(--border-soft);font-size:10.5px;color:var(--text-faint);line-height:1.7;margin-top:auto}
 
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
-.hd{background:var(--panel);padding:16px 28px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.hd{background:var(--panel);padding:16px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
 .hd-title{font-size:16.5px;font-weight:800;color:var(--text);letter-spacing:-.2px}
 .hd-date{font-size:12.5px;color:var(--text-dim);margin-top:3px;font-weight:600}
+.hd-right{display:flex;align-items:center;gap:16px}
 .hd-gen{font-size:11px;color:var(--text-faint)}
+.btn-download{padding:9px 16px;border-radius:8px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;border:none;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-download:hover{filter:brightness(0.95)}
 
 .body-pad{padding:22px 28px 40px;display:flex;flex-direction:column;gap:16px;max-width:1240px;width:100%;margin:0 auto;flex:1}
 
@@ -138,6 +142,12 @@ tbody tr:hover td{background:var(--accent-soft)}
 
 .target-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .target-grid .panel{padding:16px 18px}
+.sec-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.sec-title-row .sec-title{margin-bottom:0}
+.view-toggle{display:flex;gap:2px;background:var(--border-soft);border-radius:7px;padding:2px;flex-shrink:0}
+.vt-btn{border:none;background:transparent;color:var(--text-faint);font-size:10.5px;font-weight:600;padding:5px 9px;border-radius:5px;cursor:pointer;font-family:inherit}
+.vt-btn.active{background:var(--panel);color:var(--accent);box-shadow:var(--shadow)}
+.vt-btn:hover:not(.active){color:var(--text-dim)}
 
 .ft{text-align:center;padding:14px 24px 8px;font-size:10.5px;color:var(--text-faint)}
 
@@ -175,7 +185,10 @@ tbody tr:hover td{background:var(--accent-soft)}
         <div class="hd-title">축제 영상 캠페인 성과 대시보드</div>
         <div class="hd-date" id="hd-range"></div>
       </div>
-      <div class="hd-gen">생성: 2026. 7. 10. 오후 4:19:11</div>
+      <div class="hd-right">
+        <div class="hd-gen">생성: 2026. 7. 10. 오후 4:38:01</div>
+        <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
+      </div>
     </div>
 
     <div class="body-pad">
@@ -184,6 +197,16 @@ tbody tr:hover td{background:var(--accent-soft)}
       <div class="panel">
         <div class="sec-title">일자별 성과 추이 <span class="hint">비용 · 조회수 · VTR</span></div>
         <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <div class="sec-title">일자별 성과 <span class="hint">날짜별 원본 수치</span></div>
+        <div class="tbl-scroll" style="max-height:400px">
+          <table>
+            <thead><tr><th class="left">날짜</th><th>비용</th><th>노출</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead>
+            <tbody id="daily-tbody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="panel">
@@ -204,22 +227,43 @@ tbody tr:hover td{background:var(--accent-soft)}
       <div class="sec-title" style="margin-top:2px">타겟별 성과</div>
       <div class="target-grid">
         <div class="panel">
-          <div class="sec-title">연령별</div>
-          <div class="tbl-scroll" style="max-height:320px">
+          <div class="sec-title-row">
+            <div class="sec-title">연령별</div>
+            <div class="view-toggle" id="age-toggle">
+              <button class="vt-btn active" data-mode="table" onclick="setTargetView('age','table')">표</button>
+              <button class="vt-btn" data-mode="chart" onclick="setTargetView('age','chart')">차트</button>
+            </div>
+          </div>
+          <div class="tbl-scroll" id="age-table-wrap" style="max-height:320px">
             <table><thead><tr><th class="left">연령</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="age-tbody"></tbody></table>
           </div>
+          <div class="chart-wrap" id="age-chart-wrap" style="height:230px;display:none"><canvas id="age-chart"></canvas></div>
         </div>
         <div class="panel">
-          <div class="sec-title">성별</div>
-          <div class="tbl-scroll" style="max-height:320px">
+          <div class="sec-title-row">
+            <div class="sec-title">성별</div>
+            <div class="view-toggle" id="gender-toggle">
+              <button class="vt-btn active" data-mode="table" onclick="setTargetView('gender','table')">표</button>
+              <button class="vt-btn" data-mode="chart" onclick="setTargetView('gender','chart')">차트</button>
+            </div>
+          </div>
+          <div class="tbl-scroll" id="gender-table-wrap" style="max-height:320px">
             <table><thead><tr><th class="left">성별</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="gender-tbody"></tbody></table>
           </div>
+          <div class="chart-wrap" id="gender-chart-wrap" style="height:230px;display:none"><canvas id="gender-chart"></canvas></div>
         </div>
         <div class="panel">
-          <div class="sec-title">자녀 유무</div>
-          <div class="tbl-scroll" style="max-height:320px">
+          <div class="sec-title-row">
+            <div class="sec-title">자녀 유무</div>
+            <div class="view-toggle" id="children-toggle">
+              <button class="vt-btn active" data-mode="table" onclick="setTargetView('children','table')">표</button>
+              <button class="vt-btn" data-mode="chart" onclick="setTargetView('children','chart')">차트</button>
+            </div>
+          </div>
+          <div class="tbl-scroll" id="children-table-wrap" style="max-height:320px">
             <table><thead><tr><th class="left">자녀 유무</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="children-tbody"></tbody></table>
           </div>
+          <div class="chart-wrap" id="children-chart-wrap" style="height:230px;display:none"><canvas id="children-chart"></canvas></div>
         </div>
       </div>
     </div>
@@ -323,8 +367,8 @@ function fmtKpiNum(n, unit) {
 }
 function fmtW(n){ n=Math.round(n); if(n>=100000000){const v=n/100000000; return (v===Math.round(v)?Math.round(v):v.toFixed(1))+'억';} if(n>=10000) return Math.round(n/10000).toLocaleString()+'만'; return '₩'+n.toLocaleString(); }
 function fmtK(n){ return Math.round(n).toLocaleString(); }
-function fmtPct(n){ return isFinite(n) ? n.toFixed(2)+'%' : '-'; }
-function fmtCPV(n){ return n>0 ? '₩'+n.toFixed(1) : '-'; }
+function fmtPct(n){ return isFinite(n) ? n.toFixed(1)+'%' : '-'; }
+function fmtCPV(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
 
 const PERIODS = [
   { key: 'yesterday', label: '어제' },
@@ -332,7 +376,6 @@ const PERIODS = [
   { key: 'last7', label: '최근 7일' },
   { key: 'last30', label: '최근 30일' },
   { key: 'thisMonth', label: '이번달' },
-  { key: 'lastMonth', label: '지난달' },
   { key: 'all', label: '전체 기간' },
 ];
 
@@ -349,12 +392,6 @@ function getRange(dates, period) {
   if (period === 'last7') { const s=new Date(d); s.setDate(s.getDate()-6); return [iso(s), maxDate]; }
   if (period === 'last30') { const s=new Date(d); s.setDate(s.getDate()-29); return [iso(s), maxDate]; }
   if (period === 'thisMonth') { const s=new Date(d.getFullYear(), d.getMonth(), 1); return [iso(s), maxDate]; }
-  if (period === 'lastMonth') {
-    const s=new Date(d.getFullYear(), d.getMonth()-1, 1);
-    const e=new Date(d.getFullYear(), d.getMonth(), 0);
-    const eStr = iso(e) > maxDate ? maxDate : iso(e);
-    return [iso(s), eStr];
-  }
   return [dates[0], maxDate];
 }
 function parseISO(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
@@ -362,6 +399,7 @@ function iso(d) { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0
 function fmtShort(s){ const [,m,d]=s.split('-').map(Number); return m+'/'+d; }
 function weekdayColor(s){ const day=parseISO(s).getDay(); if(day===6) return '#3d6fd0'; if(day===0) return '#d0455f'; return null; }
 function fmtShortColored(s){ const c=weekdayColor(s), txt=fmtShort(s); return c?`<span style="color:${c}">${txt}</span>`:txt; }
+function fmtDateColored(s){ const c=weekdayColor(s); return c?`<span style="color:${c}">${s}</span>`:s; }
 function esc(s){ return String(s).replace(/'/g,"\\'"); }
 
 function isDark(){
@@ -451,11 +489,29 @@ function renderChart(view, start, end) {
   });
 }
 
-function renderCreativeTable(view, start, end) {
-  const rows = view.creatives
+function renderDailyTable(view, start, end) {
+  const dates = view.dates.filter(d => d >= start && d <= end).slice().sort((a, b) => b.localeCompare(a));
+  const rows = dates
+    .map(d => ({ d, m: metrics(view.byDate[d] || emptyTotals()) }))
+    .filter(({ m }) => m.cost > 0 || m.impr > 0);
+  document.getElementById('daily-tbody').innerHTML = rows.map(({ d, m }) => `<tr>
+    <td class="left name">${fmtDateColored(d)}</td>
+    <td class="num">${fmtW(m.cost)}</td>
+    <td class="num">${fmtK(m.impr)}</td>
+    <td class="num">${fmtK(m.views)}</td>
+    <td class="num">${fmtPct(m.vtr)}</td>
+    <td class="num">${fmtCPV(m.cpv)}</td>
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+}
+
+function creativeRows(view, start, end) {
+  return view.creatives
     .map(c => ({ c, m: metrics(sumRange(c.byDate, start, end)) }))
     .filter(({ m }) => m.cost > 0 || m.impr > 0)
     .sort((a, b) => b.m.cost - a.m.cost);
+}
+function renderCreativeTable(view, start, end) {
+  const rows = creativeRows(view, start, end);
   document.getElementById('creative-tbody').innerHTML = rows.map(({ c, m }) => `<tr>
     <td class="left">${esc(c.campaign)}</td>
     <td class="left name">${esc(c.adName)}${c.status && c.status !== '사용중' ? ' <span class="badge">'+esc(c.status)+'</span>' : ''}</td>
@@ -467,11 +523,24 @@ function renderCreativeTable(view, start, end) {
   </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
 }
 
-function renderTargetTable(elId, items, labelKey, start, end) {
-  const rows = items
+// 타겟 성과: 조회수 도넛 색상은 카테고리(고정 순서)에 매핑 — 필터로 항목이 줄어도 같은 항목은 항상 같은 색
+const CATEGORICAL_LIGHT = ['#2a78d6', '#1baf7a', '#eda100', '#008300', '#4a3aa7', '#e34948', '#e87ba4', '#eb6834'];
+const CATEGORICAL_DARK  = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9', '#e66767', '#d55181', '#d95926'];
+const TARGET_DIMS = [
+  { key: 'age', label: '연령', labelKey: 'age', order: ['만 18~24세','만 25~34세','만 35~44세','만 45~54세','만 55~64세','65세 이상','알 수 없음'] },
+  { key: 'gender', label: '성별', labelKey: 'gender', order: ['여성','남성','알 수 없음'] },
+  { key: 'children', label: '자녀 유무', labelKey: 'hasChildren', order: ['자녀 있음','자녀 없음','알 수 없음'] },
+];
+let TARGET_VIEW = { age: 'table', gender: 'table', children: 'table' };
+let targetCharts = { age: null, gender: null, children: null };
+
+function targetRows(items, labelKey, start, end) {
+  return items
     .map(item => ({ label: item[labelKey], m: metrics(sumRange(item.byDate, start, end)) }))
     .filter(({ m }) => m.cost > 0 || m.impr > 0)
     .sort((a, b) => b.m.cost - a.m.cost);
+}
+function renderTargetTableRows(elId, rows) {
   document.getElementById(elId).innerHTML = rows.map(({ label, m }) => `<tr>
     <td class="left name">${esc(label)}</td>
     <td class="num">${fmtW(m.cost)}</td>
@@ -480,6 +549,90 @@ function renderTargetTable(elId, items, labelKey, start, end) {
     <td class="num">${fmtCPV(m.cpv)}</td>
   </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
 }
+function categoryColor(dim, label) {
+  const palette = isDark() ? CATEGORICAL_DARK : CATEGORICAL_LIGHT;
+  let idx = dim.order.indexOf(label);
+  if (idx === -1) idx = dim.order.length;
+  return palette[idx % palette.length];
+}
+function renderTargetDonut(dim, rows) {
+  const labels = rows.map(r => r.label);
+  const data = rows.map(r => Math.round(r.m.views));
+  const colors = labels.map(l => categoryColor(dim, l));
+  const total = data.reduce((a, b) => a + b, 0);
+  const tickColor = cssVar('--text-dim') || '#4d5670';
+  const panelColor = cssVar('--panel') || '#fff';
+  const ctx = document.getElementById(dim.key + '-chart').getContext('2d');
+  if (targetCharts[dim.key]) targetCharts[dim.key].destroy();
+  targetCharts[dim.key] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: panelColor, borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: tickColor, font: { size: 10.5 }, boxWidth: 10, padding: 8 } },
+        tooltip: { callbacks: { label: (c) => {
+          const v = c.parsed; const pct = total > 0 ? (v / total * 100).toFixed(1) : '0.0';
+          return ` ${c.label}: ${v.toLocaleString()}회 (${pct}%)`;
+        } } },
+      },
+    },
+  });
+}
+function renderTargetPanel(dim, items, start, end) {
+  const rows = targetRows(items, dim.labelKey, start, end);
+  if (TARGET_VIEW[dim.key] === 'chart') renderTargetDonut(dim, rows);
+  else renderTargetTableRows(dim.key + '-tbody', rows);
+}
+function setTargetView(key, mode) {
+  TARGET_VIEW[key] = mode;
+  document.querySelectorAll('#' + key + '-toggle .vt-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById(key + '-table-wrap').style.display = mode === 'table' ? '' : 'none';
+  document.getElementById(key + '-chart-wrap').style.display = mode === 'chart' ? '' : 'none';
+  renderAll();
+}
+
+function csvValue(v) { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function csvLine(arr) { return arr.map(csvValue).join(','); }
+function buildExportCSV(view, start, end) {
+  const lines = [];
+  lines.push('일자별 성과');
+  lines.push(csvLine(['날짜', '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
+  for (const d of view.dates.filter(d => d >= start && d <= end)) {
+    const m = metrics(view.byDate[d] || emptyTotals());
+    lines.push(csvLine([d, Math.round(m.cost), Math.round(m.impr), Math.round(m.views), m.vtr.toFixed(1), Math.round(m.cpv)]));
+  }
+  lines.push('');
+  lines.push('소재별 성과');
+  lines.push(csvLine(['캠페인', '소재', '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
+  for (const { c, m } of creativeRows(view, start, end)) {
+    lines.push(csvLine([c.campaign, c.adName, Math.round(m.cost), Math.round(m.impr), Math.round(m.views), m.vtr.toFixed(1), Math.round(m.cpv)]));
+  }
+  for (const dim of TARGET_DIMS) {
+    lines.push('');
+    lines.push(dim.label + '별 성과');
+    lines.push(csvLine([dim.label, '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
+    const items = dim.key === 'age' ? view.byAge : dim.key === 'gender' ? view.byGender : view.byChildren;
+    for (const { label, m } of targetRows(items, dim.labelKey, start, end)) {
+      lines.push(csvLine([label, Math.round(m.cost), Math.round(m.impr), Math.round(m.views), m.vtr.toFixed(1), Math.round(m.cpv)]));
+    }
+  }
+  return lines.join('\r\n');
+}
+function downloadCSV(filename, content) {
+  const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadData() {
+  const view = currentView();
+  const [start, end] = getRange(view.dates, CUR_PERIOD);
+  const stamp = start === end ? start : start + '_' + end;
+  downloadCSV(`festival-dashboard_${stamp}.csv`, buildExportCSV(view, start, end));
+}
 
 function renderAll() {
   renderMediaPills();
@@ -487,10 +640,11 @@ function renderAll() {
   const view = currentView();
   const [start, end] = renderKPI(view);
   renderChart(view, start, end);
+  renderDailyTable(view, start, end);
   renderCreativeTable(view, start, end);
-  renderTargetTable('age-tbody', view.byAge, 'age', start, end);
-  renderTargetTable('gender-tbody', view.byGender, 'gender', start, end);
-  renderTargetTable('children-tbody', view.byChildren, 'hasChildren', start, end);
+  renderTargetPanel(TARGET_DIMS[0], view.byAge, start, end);
+  renderTargetPanel(TARGET_DIMS[1], view.byGender, start, end);
+  renderTargetPanel(TARGET_DIMS[2], view.byChildren, start, end);
 }
 renderAll();
 
