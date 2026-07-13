@@ -191,7 +191,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 13. 오전 10:44:38</div>
+        <div class="hd-gen">생성: 2026. 7. 13. 오전 10:59:07</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -652,7 +652,7 @@ function buildExportCSV(view, start, end) {
   const lines = [];
   lines.push('일자별 성과');
   lines.push(csvLine(['날짜', '요일', '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
-  const dailyRows = view.dates.filter(d => d >= start && d <= end).map(d => ({ d, m: metrics(view.byDate[d] || emptyTotals()) }));
+  const dailyRows = view.dates.filter(d => d >= start && d <= end).slice().sort((a, b) => b.localeCompare(a)).map(d => ({ d, m: metrics(view.byDate[d] || emptyTotals()) }));
   for (const { d, m } of dailyRows) lines.push(csvLine([d, weekdayLabel(d), ...csvMetricCells(m)]));
   if (dailyRows.length > 0) lines.push(csvLine(['TOTAL', '', ...csvMetricCells(totalOf(dailyRows, r => r.m))]));
 
