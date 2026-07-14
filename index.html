@@ -191,7 +191,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 14. 오전 8:48:34</div>
+        <div class="hd-gen">생성: 2026. 7. 14. 오후 4:02:01</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -265,7 +265,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         </div>
         <div class="panel">
           <div class="sec-title-row">
-            <div class="sec-title">자녀 유무</div>
+            <div class="sec-title">자녀 유무 <span class="hint">Google 전용</span></div>
             <div class="view-toggle" id="children-toggle">
               <button class="vt-btn active" data-mode="table" onclick="setTargetView('children','table')">표</button>
               <button class="vt-btn" data-mode="chart" onclick="setTargetView('children','chart')">차트</button>
@@ -569,7 +569,7 @@ const CATEGORICAL_DARK  = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9'
 const TARGET_DIMS = [
   { key: 'age', label: '연령', labelKey: 'age', order: ['만 18~24세','만 25~34세','만 35~44세','만 45~54세','만 55~64세','65세 이상','알 수 없음'] },
   { key: 'gender', label: '성별', labelKey: 'gender', order: ['여성','남성','알 수 없음'] },
-  { key: 'children', label: '자녀 유무', labelKey: 'hasChildren', order: ['자녀 있음','자녀 없음','알 수 없음'] },
+  { key: 'children', label: '자녀 유무', labelKey: 'hasChildren', order: ['자녀 있음','자녀 없음','알 수 없음'], note: ' (Google 전용 — Meta는 자녀유무 데이터 없음)' },
 ];
 let TARGET_VIEW = { age: 'table', gender: 'table', children: 'table' };
 let targetCharts = { age: null, gender: null, children: null };
@@ -665,7 +665,7 @@ function buildExportCSV(view, start, end) {
 
   for (const dim of TARGET_DIMS) {
     lines.push('');
-    lines.push(dim.label + '별 성과');
+    lines.push(dim.label + '별 성과' + (dim.note || ''));
     lines.push(csvLine([dim.label, '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
     const items = dim.key === 'age' ? view.byAge : dim.key === 'gender' ? view.byGender : view.byChildren;
     const tRows = targetRows(items, dim.labelKey, start, end);
