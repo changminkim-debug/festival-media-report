@@ -196,7 +196,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 20. 오전 9:08:04</div>
+        <div class="hd-gen">생성: 2026. 7. 20. 오전 9:08:26</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -985,7 +985,7 @@ function renderAll() {
   if (MODE === 'sa') {
     daView.style.display='none'; saView.style.display='flex';
     mediaSection.style.display='none';
-    if(note) note.innerHTML='CTR = 클릭수 ÷ 노출수<br>CPC = 비용 ÷ 클릭수<br>평균순위 = 노출 가중평균';
+    if(note) note.innerHTML='CTR = 클릭수 ÷ 노출수<br>CPC = 비용 ÷ 클릭수';
     const view=naverView();
     const [start,end]=renderSaKPI(view);
     renderSaChart(view,start,end);
