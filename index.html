@@ -196,7 +196,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 20. 오전 9:03:13</div>
+        <div class="hd-gen">생성: 2026. 7. 20. 오전 9:08:04</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -300,20 +300,20 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <div class="sec-title">일자별 성과 <span class="hint">네이버 파워링크 · 날짜별 원본 수치</span></div>
           <div class="tbl-scroll" style="max-height:400px">
             <table>
-              <thead><tr><th class="left">날짜</th><th>비용</th><th>노출</th><th>클릭</th><th>CTR</th><th>CPC</th><th>평균순위</th></tr></thead>
+              <thead><tr><th class="left">날짜</th><th>비용</th><th>노출</th><th>클릭</th><th>CTR</th><th>CPC</th></tr></thead>
               <tbody id="sa-daily-tbody"></tbody>
             </table>
           </div>
         </div>
 
         <div class="panel">
-          <div class="sec-title">키워드별 성과 <span class="hint">캠페인·광고그룹·키워드 단위 · 비용순 정렬</span></div>
+          <div class="sec-title">키워드별 성과 <span class="hint">캠페인별 · 클릭수 많은 순</span></div>
           <div class="tbl-scroll">
             <table>
               <thead>
                 <tr>
-                  <th class="left">캠페인</th><th class="left">광고그룹</th><th class="left">키워드</th>
-                  <th>비용</th><th>노출</th><th>클릭</th><th>CTR</th><th>CPC</th><th>평균순위</th>
+                  <th class="left">캠페인</th><th class="left">키워드</th>
+                  <th>클릭</th><th>CTR</th><th>CPC</th>
                 </tr>
               </thead>
               <tbody id="sa-keyword-tbody"></tbody>
@@ -796,7 +796,6 @@ function metricsN(t){ return { ...t, ctr: t.impr>0 ? t.clicks/t.impr*100 : 0, cp
 function totalOfN(rows,getM){ const t=naverEmpty(); for(const r of rows) addN(t,getM(r)); return metricsN(t); }
 function naverView(){ const d=DATA.naver; return { dates:d.dates.slice(), byDate:d.byDate, byDevice:d.byDevice, byCampaign:d.byCampaign, keywords:d.keywords }; }
 function fmtCPC(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
-function fmtRank(n){ return n>0 ? n.toFixed(1) : '-'; }
 
 function renderSaKPI(view){
   const [start,end]=getRange(view.dates,CUR_PERIOD);
@@ -853,8 +852,7 @@ function renderSaDailyTable(view,start,end){
     <td class="num">${fmtK(m.clicks)}</td>
     <td class="num">${fmtPct(m.ctr)}</td>
     <td class="num">${fmtCPC(m.cpc)}</td>
-    <td class="num">${fmtRank(m.rank)}</td>
-  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
   if(rows.length>0){ const t=totalOfN(rows,r=>r.m);
     html+=`<tr class="total-row">
       <td class="left name">TOTAL</td>
@@ -863,37 +861,30 @@ function renderSaDailyTable(view,start,end){
       <td class="num">${fmtK(t.clicks)}</td>
       <td class="num">${fmtPct(t.ctr)}</td>
       <td class="num">${fmtCPC(t.cpc)}</td>
-      <td class="num">${fmtRank(t.rank)}</td>
     </tr>`;
   }
   document.getElementById('sa-daily-tbody').innerHTML=html;
 }
 
 function saKeywordRows(view,start,end){
-  return view.keywords.map(c=>({c,m:metricsN(sumRangeN(c.byDate,start,end))})).filter(({m})=>m.cost>0||m.impr>0).sort((a,b)=>b.m.cost-a.m.cost);
+  return view.keywords.map(c=>({c,m:metricsN(sumRangeN(c.byDate,start,end))})).filter(({m})=>m.clicks>0||m.impr>0)
+    .sort((a,b)=> a.c.campaign===b.c.campaign ? b.m.clicks-a.m.clicks : a.c.campaign.localeCompare(b.c.campaign,'ko'));
 }
 function renderSaKeywordTable(view,start,end){
   const rows=saKeywordRows(view,start,end);
   let html=rows.map(({c,m})=>`<tr>
     <td class="left">${esc(c.campaign)}</td>
-    <td class="left">${esc(c.adGroup)}</td>
     <td class="left name">${esc(c.keyword)}</td>
-    <td class="num">${fmtW(m.cost)}</td>
-    <td class="num">${fmtK(m.impr)}</td>
     <td class="num">${fmtK(m.clicks)}</td>
     <td class="num">${fmtPct(m.ctr)}</td>
     <td class="num">${fmtCPC(m.cpc)}</td>
-    <td class="num">${fmtRank(m.rank)}</td>
-  </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
   if(rows.length>0){ const t=totalOfN(rows,r=>r.m);
     html+=`<tr class="total-row">
-      <td class="left" colspan="3">TOTAL</td>
-      <td class="num">${fmtW(t.cost)}</td>
-      <td class="num">${fmtK(t.impr)}</td>
+      <td class="left" colspan="2">TOTAL</td>
       <td class="num">${fmtK(t.clicks)}</td>
       <td class="num">${fmtPct(t.ctr)}</td>
       <td class="num">${fmtCPC(t.cpc)}</td>
-      <td class="num">${fmtRank(t.rank)}</td>
     </tr>`;
   }
   document.getElementById('sa-keyword-tbody').innerHTML=html;
@@ -956,26 +947,26 @@ function setSaView(key,mode){
   renderAll();
 }
 
-function csvMetricCellsN(m){ return [Math.round(m.cost),Math.round(m.impr),Math.round(m.clicks),m.ctr.toFixed(1),Math.round(m.cpc),m.rank.toFixed(1)]; }
+function csvMetricCellsN(m){ return [Math.round(m.cost),Math.round(m.impr),Math.round(m.clicks),m.ctr.toFixed(1),Math.round(m.cpc)]; }
 function buildSaExportCSV(view,start,end){
   const lines=[];
   lines.push('일자별 성과 (네이버 파워링크)');
-  lines.push(csvLine(['날짜','요일','비용','노출','클릭','CTR(%)','CPC','평균순위']));
+  lines.push(csvLine(['날짜','요일','비용','노출','클릭','CTR(%)','CPC']));
   const dailyRows=view.dates.filter(d=>d>=start&&d<=end).map(d=>({d,m:metricsN(view.byDate[d]||naverEmpty())}));
   for(const {d,m} of dailyRows) lines.push(csvLine([d,weekdayLabel(d),...csvMetricCellsN(m)]));
   if(dailyRows.length>0) lines.push(csvLine(['TOTAL','',...csvMetricCellsN(totalOfN(dailyRows,r=>r.m))]));
 
   lines.push('');
-  lines.push('키워드별 성과');
-  lines.push(csvLine(['캠페인','광고그룹','키워드','비용','노출','클릭','CTR(%)','CPC','평균순위']));
+  lines.push('키워드별 성과 (캠페인별 · 클릭순)');
+  lines.push(csvLine(['캠페인','키워드','클릭','CTR(%)','CPC']));
   const kRows=saKeywordRows(view,start,end);
-  for(const {c,m} of kRows) lines.push(csvLine([c.campaign,c.adGroup,c.keyword,...csvMetricCellsN(m)]));
-  if(kRows.length>0) lines.push(csvLine(['TOTAL','','',...csvMetricCellsN(totalOfN(kRows,r=>r.m))]));
+  for(const {c,m} of kRows) lines.push(csvLine([c.campaign,c.keyword,Math.round(m.clicks),m.ctr.toFixed(1),Math.round(m.cpc)]));
+  if(kRows.length>0){ const t=totalOfN(kRows,r=>r.m); lines.push(csvLine(['TOTAL','',Math.round(t.clicks),t.ctr.toFixed(1),Math.round(t.cpc)])); }
 
   for(const [label,items,lk] of [['디바이스',view.byDevice,'device'],['캠페인',view.byCampaign,'campaign']]){
     lines.push('');
     lines.push(label+'별 성과');
-    lines.push(csvLine([label,'비용','노출','클릭','CTR(%)','CPC','평균순위']));
+    lines.push(csvLine([label,'비용','노출','클릭','CTR(%)','CPC']));
     const rows=saBreakRows(items,lk,start,end);
     for(const {label:l,m} of rows) lines.push(csvLine([l,...csvMetricCellsN(m)]));
     if(rows.length>0) lines.push(csvLine(['TOTAL',...csvMetricCellsN(totalOfN(rows,r=>r.m))]));
