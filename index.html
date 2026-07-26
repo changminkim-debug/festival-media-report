@@ -135,6 +135,10 @@ body{
 table{width:100%;border-collapse:collapse}
 th{padding:9px 12px;color:var(--text-dim);font-size:11px;font-weight:700;text-align:right;white-space:nowrap;border-bottom:2px solid var(--border)}
 th.left{text-align:left}
+th.sortable{cursor:pointer;user-select:none;transition:color .12s}
+th.sortable:hover{color:var(--accent)}
+th.sortable.sorted{color:var(--accent)}
+th .sort-ind{font-size:9px;margin-left:2px}
 td{padding:9px 12px;font-size:12.5px;text-align:right;border-bottom:1px solid var(--border-soft);white-space:nowrap;color:var(--text)}
 td.left{text-align:left}
 td.name{font-weight:600}
@@ -196,7 +200,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <div class="hd-date" id="hd-range"></div>
       </div>
       <div class="hd-right">
-        <div class="hd-gen">생성: 2026. 7. 27. 오전 8:30:31</div>
+        <div class="hd-gen">생성: 2026. 7. 27. 오전 8:39:17</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -307,13 +311,17 @@ tr.total-row:hover td{background:var(--accent-soft)}
         </div>
 
         <div class="panel">
-          <div class="sec-title">키워드별 성과 <span class="hint">캠페인별 · 클릭수 많은 순</span></div>
+          <div class="sec-title">키워드별 성과 <span class="hint">숫자 헤더 클릭 시 정렬 (오름/내림 전환)</span></div>
           <div class="tbl-scroll">
             <table>
               <thead>
-                <tr>
+                <tr id="sa-keyword-head">
                   <th class="left">캠페인</th><th class="left">키워드</th>
-                  <th>클릭</th><th>CTR</th><th>CPC</th>
+                  <th class="sortable" data-sort="cost" onclick="setSaKeywordSort('cost')">비용<span class="sort-ind"></span></th>
+                  <th class="sortable" data-sort="impr" onclick="setSaKeywordSort('impr')">노출<span class="sort-ind"></span></th>
+                  <th class="sortable" data-sort="clicks" onclick="setSaKeywordSort('clicks')">클릭<span class="sort-ind"></span></th>
+                  <th class="sortable" data-sort="ctr" onclick="setSaKeywordSort('ctr')">CTR<span class="sort-ind"></span></th>
+                  <th class="sortable" data-sort="cpc" onclick="setSaKeywordSort('cpc')">CPC<span class="sort-ind"></span></th>
                 </tr>
               </thead>
               <tbody id="sa-keyword-tbody"></tbody>
@@ -866,28 +874,49 @@ function renderSaDailyTable(view,start,end){
   document.getElementById('sa-daily-tbody').innerHTML=html;
 }
 
+let SA_KW_SORT={ key:'clicks', dir:'desc' };
+function setSaKeywordSort(key){
+  if(SA_KW_SORT.key===key) SA_KW_SORT.dir = SA_KW_SORT.dir==='asc' ? 'desc' : 'asc';
+  else { SA_KW_SORT.key=key; SA_KW_SORT.dir='desc'; }
+  renderAll();
+}
 function saKeywordRows(view,start,end){
-  return view.keywords.map(c=>({c,m:metricsN(sumRangeN(c.byDate,start,end))})).filter(({m})=>m.clicks>0||m.impr>0)
-    .sort((a,b)=> a.c.campaign===b.c.campaign ? b.m.clicks-a.m.clicks : a.c.campaign.localeCompare(b.c.campaign,'ko'));
+  const rows=view.keywords.map(c=>({c,m:metricsN(sumRangeN(c.byDate,start,end))})).filter(({m})=>m.clicks>0||m.impr>0);
+  const {key,dir}=SA_KW_SORT, s=dir==='asc'?1:-1;
+  rows.sort((a,b)=>{ const va=a.m[key], vb=b.m[key]; if(va<vb) return -s; if(va>vb) return s; return a.c.keyword.localeCompare(b.c.keyword,'ko'); });
+  return rows;
+}
+function updateSaKeywordSortIndicators(){
+  const head=document.getElementById('sa-keyword-head'); if(!head) return;
+  head.querySelectorAll('th[data-sort]').forEach(th=>{
+    const ind=th.querySelector('.sort-ind');
+    if(th.dataset.sort===SA_KW_SORT.key){ ind.textContent = SA_KW_SORT.dir==='asc'?'▲':'▼'; th.classList.add('sorted'); }
+    else { ind.textContent=''; th.classList.remove('sorted'); }
+  });
 }
 function renderSaKeywordTable(view,start,end){
   const rows=saKeywordRows(view,start,end);
   let html=rows.map(({c,m})=>`<tr>
     <td class="left">${esc(c.campaign)}</td>
     <td class="left name">${esc(c.keyword)}</td>
+    <td class="num">${fmtW(m.cost)}</td>
+    <td class="num">${fmtK(m.impr)}</td>
     <td class="num">${fmtK(m.clicks)}</td>
     <td class="num">${fmtPct(m.ctr)}</td>
     <td class="num">${fmtCPC(m.cpc)}</td>
-  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
   if(rows.length>0){ const t=totalOfN(rows,r=>r.m);
     html+=`<tr class="total-row">
       <td class="left" colspan="2">TOTAL</td>
+      <td class="num">${fmtW(t.cost)}</td>
+      <td class="num">${fmtK(t.impr)}</td>
       <td class="num">${fmtK(t.clicks)}</td>
       <td class="num">${fmtPct(t.ctr)}</td>
       <td class="num">${fmtCPC(t.cpc)}</td>
     </tr>`;
   }
   document.getElementById('sa-keyword-tbody').innerHTML=html;
+  updateSaKeywordSortIndicators();
 }
 
 let SA_VIEW={ device:'table', campaign:'table' };
@@ -957,11 +986,11 @@ function buildSaExportCSV(view,start,end){
   if(dailyRows.length>0) lines.push(csvLine(['TOTAL','',...csvMetricCellsN(totalOfN(dailyRows,r=>r.m))]));
 
   lines.push('');
-  lines.push('키워드별 성과 (캠페인별 · 클릭순)');
-  lines.push(csvLine(['캠페인','키워드','클릭','CTR(%)','CPC']));
+  lines.push('키워드별 성과');
+  lines.push(csvLine(['캠페인','키워드','비용','노출','클릭','CTR(%)','CPC']));
   const kRows=saKeywordRows(view,start,end);
-  for(const {c,m} of kRows) lines.push(csvLine([c.campaign,c.keyword,Math.round(m.clicks),m.ctr.toFixed(1),Math.round(m.cpc)]));
-  if(kRows.length>0){ const t=totalOfN(kRows,r=>r.m); lines.push(csvLine(['TOTAL','',Math.round(t.clicks),t.ctr.toFixed(1),Math.round(t.cpc)])); }
+  for(const {c,m} of kRows) lines.push(csvLine([c.campaign,c.keyword,Math.round(m.cost),Math.round(m.impr),Math.round(m.clicks),m.ctr.toFixed(1),Math.round(m.cpc)]));
+  if(kRows.length>0){ const t=totalOfN(kRows,r=>r.m); lines.push(csvLine(['TOTAL','',Math.round(t.cost),Math.round(t.impr),Math.round(t.clicks),t.ctr.toFixed(1),Math.round(t.cpc)])); }
 
   for(const [label,items,lk] of [['디바이스',view.byDevice,'device'],['캠페인',view.byCampaign,'campaign']]){
     lines.push('');
