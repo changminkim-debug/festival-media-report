@@ -128,6 +128,8 @@ body{
 .cv{font-size:18px;font-weight:700;letter-spacing:-.4px;color:var(--text);white-space:nowrap}
 .cv-unit{font-size:.42em;font-weight:500;color:var(--text-faint);margin-left:2px;vertical-align:middle}
 .cv-scale{font-size:.62em;font-weight:600;color:var(--text-dim);margin-left:1px;vertical-align:middle}
+.cv-sub{font-size:12.5px;font-weight:700;color:var(--text-dim);white-space:nowrap;margin-top:3px}
+.cv-tag{font-size:9px;font-weight:700;color:var(--text-faint);margin-left:5px;letter-spacing:.2px;vertical-align:middle}
 
 .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
 .sec-title{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:baseline;gap:8px;padding-left:10px;border-left:3px solid var(--accent)}
@@ -212,7 +214,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <button class="active" data-vat="excl" onclick="setVat('excl')">VAT 제외</button>
           <button data-vat="incl" onclick="setVat('incl')">VAT 포함</button>
         </div>
-        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:46:31</div>
+        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:53:57</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -560,6 +562,13 @@ function fmtKpiNum(n, unit) {
   return Math.round(n).toLocaleString() + '<span class="cv-unit">'+unit+'</span>';
 }
 function fmtW(n){ return '₩'+Math.round(n).toLocaleString(); }
+// 비용 KPI 카드: VAT 제외/포함 두 금액을 동시에 표기 (rawCost = VAT 제외 원본)
+function dualCostHTML(rawCost){
+  const ex = '₩'+Math.round(rawCost).toLocaleString();
+  const inc = '₩'+Math.round(rawCost*1.1).toLocaleString();
+  return '<div class="cv num" style="font-size:15px">'+ex+'<span class="cv-tag">VAT 제외</span></div>'+
+         '<div class="cv-sub num">'+inc+'<span class="cv-tag">VAT 포함</span></div>';
+}
 function fmtK(n){ return Math.round(n).toLocaleString(); }
 function fmtPct(n){ return isFinite(n) ? n.toFixed(1)+'%' : '-'; }
 function fmtCPV(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
@@ -624,16 +633,17 @@ function setPeriod(key) { CUR_PERIOD = key; renderAll(); }
 function renderKPI(view) {
   const [start, end] = getRange(view.dates, CUR_PERIOD);
   document.getElementById('hd-range').innerHTML = start === end ? fmtShortColored(start) : fmtShortColored(start) + ' ~ ' + fmtShortColored(end);
-  const m = metrics(sumRange(view.byDate, start, end));
+  const raw = sumRange(view.byDate, start, end);
+  const m = metrics(raw);
   const cards = [
-    { l: '비용', v: fmtKpiW(m.cost) },
+    { l: '광고비', html: dualCostHTML(raw.cost) },
     { l: '노출', v: fmtKpiNum(m.impr, '회') },
     { l: '조회수', v: fmtKpiNum(m.views, '회') },
     { l: 'VTR', v: fmtPct(m.vtr) },
     { l: 'CPV', v: fmtCPV(m.cpv) },
   ];
   document.getElementById('kpi-cards').innerHTML = cards.map(c =>
-    `<div class="card"><div class="cl">${c.l}</div><div class="cv num">${c.v}</div></div>`
+    `<div class="card"><div class="cl">${c.l}</div>${c.html || `<div class="cv num">${c.v}</div>`}</div>`
   ).join('');
   return [start, end];
 }
@@ -895,15 +905,16 @@ function fmtCPC(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
 function renderSaKPI(view){
   const [start,end]=getRange(view.dates,CUR_PERIOD);
   document.getElementById('hd-range').innerHTML = start===end ? fmtShortColored(start) : fmtShortColored(start)+' ~ '+fmtShortColored(end);
-  const m=metricsN(sumRangeN(view.byDate,start,end));
+  const rawSa=sumRangeN(view.byDate,start,end);
+  const m=metricsN(rawSa);
   const cards=[
-    { l:'비용', v:fmtKpiW(m.cost) },
+    { l:'광고비', html:dualCostHTML(rawSa.cost) },
     { l:'노출', v:fmtKpiNum(m.impr,'회') },
     { l:'클릭수', v:fmtKpiNum(m.clicks,'회') },
     { l:'CTR', v:fmtPct(m.ctr) },
     { l:'CPC', v:fmtCPC(m.cpc) },
   ];
-  document.getElementById('sa-kpi-cards').innerHTML = cards.map(c => `<div class="card"><div class="cl">${c.l}</div><div class="cv num">${c.v}</div></div>`).join('');
+  document.getElementById('sa-kpi-cards').innerHTML = cards.map(c => `<div class="card"><div class="cl">${c.l}</div>${c.html || `<div class="cv num">${c.v}</div>`}</div>`).join('');
   return [start,end];
 }
 
@@ -1138,15 +1149,16 @@ function renderMetaReach(){
   const [start,end]=getRange(view.dates,CUR_PERIOD);
   document.getElementById('hd-range').innerHTML = start===end ? fmtShortColored(start) : fmtShortColored(start)+' ~ '+fmtShortColored(end);
 
-  const m=metricsR(sumRange(view.byDate,start,end));
+  const rawMr=sumRange(view.byDate,start,end);
+  const m=metricsR(rawMr);
   const cards=[
-    { l:'비용', v:fmtKpiW(m.cost) },
+    { l:'광고비', html:dualCostHTML(rawMr.cost) },
     { l:'노출', v:fmtKpiNum(m.impr,'회') },
     { l:'클릭', v:fmtKpiNum(m.clicks,'회') },
     { l:'CTR', v:fmtPct(m.ctr) },
     { l:'CPC', v:fmtCPC(m.cpc) },
   ];
-  document.getElementById('mr-kpi-cards').innerHTML = cards.map(c=>`<div class="card"><div class="cl">${c.l}</div><div class="cv num">${c.v}</div></div>`).join('');
+  document.getElementById('mr-kpi-cards').innerHTML = cards.map(c=>`<div class="card"><div class="cl">${c.l}</div>${c.html || `<div class="cv num">${c.v}</div>`}</div>`).join('');
 
   renderMrChart(view,start,end);
 
