@@ -214,7 +214,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <button class="active" data-vat="excl" onclick="setVat('excl')">VAT 제외</button>
           <button data-vat="incl" onclick="setVat('incl')">VAT 포함</button>
         </div>
-        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:53:57</div>
+        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:57:02</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -464,7 +464,10 @@ function sumRange(byDate, start, end) {
 // VAT: 원본 데이터는 전부 VAT 제외 기준. 'incl' 선택 시 금액지표(비용·CPV·CPC·CPM)만 ×1.1 적용.
 // 합산행 중복적용 방지를 위해 스케일은 metrics*()에서 1회만, 합계는 withRatios*()로 재계산.
 let VAT_MODE = 'excl';
+// 구글·메타 원본 = VAT 제외 기준 → 포함 볼 때 ×1.1
 function vatF(){ return VAT_MODE==='incl' ? 1.1 : 1; }
+// 네이버(SA) 원본 = VAT 포함 기준(비즈머니 소진액과 일치) → 제외 볼 때 ÷1.1, 포함은 그대로
+function vatFN(){ return VAT_MODE==='incl' ? 1 : (1/1.1); }
 function withRatios(t) {
   return { ...t, vtr: t.impr>0 ? t.views/t.impr*100 : 0, cpv: t.views>0 ? t.cost/t.views : 0 };
 }
@@ -562,10 +565,13 @@ function fmtKpiNum(n, unit) {
   return Math.round(n).toLocaleString() + '<span class="cv-unit">'+unit+'</span>';
 }
 function fmtW(n){ return '₩'+Math.round(n).toLocaleString(); }
-// 비용 KPI 카드: VAT 제외/포함 두 금액을 동시에 표기 (rawCost = VAT 제외 원본)
-function dualCostHTML(rawCost){
-  const ex = '₩'+Math.round(rawCost).toLocaleString();
-  const inc = '₩'+Math.round(rawCost*1.1).toLocaleString();
+// 비용 KPI 카드: VAT 제외/포함 두 금액을 동시에 표기.
+// inclBasis=false(구글·메타): rawCost=제외 → 포함=×1.1. inclBasis=true(네이버): rawCost=포함 → 제외=÷1.1.
+function dualCostHTML(rawCost, inclBasis){
+  const exclV = inclBasis ? rawCost/1.1 : rawCost;
+  const inclV = inclBasis ? rawCost : rawCost*1.1;
+  const ex = '₩'+Math.round(exclV).toLocaleString();
+  const inc = '₩'+Math.round(inclV).toLocaleString();
   return '<div class="cv num" style="font-size:15px">'+ex+'<span class="cv-tag">VAT 제외</span></div>'+
          '<div class="cv-sub num">'+inc+'<span class="cv-tag">VAT 포함</span></div>';
 }
@@ -897,7 +903,7 @@ function naverEmpty(){ return {cost:0,impr:0,clicks:0,rankImpr:0}; }
 function addN(dst,src){ for (const k in dst) dst[k]+=(src[k]||0); }
 function sumRangeN(byDate,start,end){ const t=naverEmpty(); for(const d in byDate){ if(d>=start&&d<=end) addN(t,byDate[d]); } return t; }
 function withRatiosN(t){ return { ...t, ctr: t.impr>0 ? t.clicks/t.impr*100 : 0, cpc: t.clicks>0 ? t.cost/t.clicks : 0, rank: t.impr>0 ? t.rankImpr/t.impr : 0 }; }
-function metricsN(t){ return withRatiosN({ ...t, cost: t.cost*vatF() }); }
+function metricsN(t){ return withRatiosN({ ...t, cost: t.cost*vatFN() }); }
 function totalOfN(rows,getM){ const t=naverEmpty(); for(const r of rows) addN(t,getM(r)); return withRatiosN(t); }
 function naverView(){ const d=DATA.naver; return { dates:d.dates.slice(), byDate:d.byDate, byDevice:d.byDevice, byCampaign:d.byCampaign, keywords:d.keywords }; }
 function fmtCPC(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
@@ -908,7 +914,7 @@ function renderSaKPI(view){
   const rawSa=sumRangeN(view.byDate,start,end);
   const m=metricsN(rawSa);
   const cards=[
-    { l:'광고비', html:dualCostHTML(rawSa.cost) },
+    { l:'광고비', html:dualCostHTML(rawSa.cost, true) },
     { l:'노출', v:fmtKpiNum(m.impr,'회') },
     { l:'클릭수', v:fmtKpiNum(m.clicks,'회') },
     { l:'CTR', v:fmtPct(m.ctr) },
