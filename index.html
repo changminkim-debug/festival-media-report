@@ -125,7 +125,7 @@ body{
 .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
 .cl{font-size:10.5px;color:var(--text-faint);letter-spacing:.4px;margin-bottom:7px;text-transform:uppercase;font-weight:700}
-.cv{font-size:21px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
+.cv{font-size:18px;font-weight:700;letter-spacing:-.4px;color:var(--text);white-space:nowrap}
 .cv-unit{font-size:.42em;font-weight:500;color:var(--text-faint);margin-left:2px;vertical-align:middle}
 .cv-scale{font-size:.62em;font-weight:600;color:var(--text-dim);margin-left:1px;vertical-align:middle}
 
@@ -212,7 +212,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <button class="active" data-vat="excl" onclick="setVat('excl')">VAT 제외</button>
           <button data-vat="incl" onclick="setVat('incl')">VAT 포함</button>
         </div>
-        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:42:58</div>
+        <div class="hd-gen">생성: 2026. 8. 1. 오후 6:46:31</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -552,18 +552,14 @@ function renderModePills() {
 function setMode(key) { if (key === 'sa' && !DATA.naver) return; MODE = key; renderAll(); }
 function setVat(m) { VAT_MODE = m; document.querySelectorAll('#vat-toggle button').forEach(b => b.classList.toggle('active', b.dataset.vat === m)); renderAll(); }
 
+// 축약 없이 정확한 원 단위 전체 표기 (콤마 구분)
 function fmtKpiW(n) {
-  n = Math.round(n);
-  if (n >= 100000000) { const v = n/100000000; return (v === Math.round(v) ? Math.round(v) : v.toFixed(1)) + '<span class="cv-scale">억</span><span class="cv-unit">원</span>'; }
-  if (n >= 10000) return Math.round(n/10000).toLocaleString() + '<span class="cv-scale">만</span><span class="cv-unit">원</span>';
-  return '₩' + n.toLocaleString();
+  return '₩' + Math.round(n).toLocaleString() + '<span class="cv-unit">원</span>';
 }
 function fmtKpiNum(n, unit) {
-  n = Math.round(n);
-  if (n >= 10000) { const m = n/10000; return (m>=100?Math.round(m).toLocaleString():m.toFixed(1).replace(/\.0$/,'')) + '<span class="cv-scale">만</span><span class="cv-unit">'+unit+'</span>'; }
-  return n.toLocaleString() + '<span class="cv-unit">'+unit+'</span>';
+  return Math.round(n).toLocaleString() + '<span class="cv-unit">'+unit+'</span>';
 }
-function fmtW(n){ n=Math.round(n); if(n>=100000000){const v=n/100000000; return (v===Math.round(v)?Math.round(v):v.toFixed(1))+'억';} if(n>=10000) return Math.round(n/10000).toLocaleString()+'만'; return '₩'+n.toLocaleString(); }
+function fmtW(n){ return '₩'+Math.round(n).toLocaleString(); }
 function fmtK(n){ return Math.round(n).toLocaleString(); }
 function fmtPct(n){ return isFinite(n) ? n.toFixed(1)+'%' : '-'; }
 function fmtCPV(n){ return n>0 ? '₩'+Math.round(n).toLocaleString() : '-'; }
